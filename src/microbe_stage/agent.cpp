@@ -17,6 +17,26 @@ using namespace thrive;
 
 REGISTER_COMPONENT(AgentComponent)
 
+
+luabind::scope
+AgentComponent::luaBindings() {
+    using namespace luabind;
+    return class_<AgentComponent, Component>("AgentComponent")
+        .enum_("ID") [
+            value("TYPE_ID", AgentComponent::TYPE_ID)
+        ]
+        .scope [
+            def("TYPE_NAME", &AgentComponent::TYPE_NAME)
+        ]
+        .def(constructor<>())
+        .def_readwrite("agentId", &AgentComponent::m_agentId)
+        .def_readwrite("potency", &AgentComponent::m_potency)
+        .def_readwrite("timeToLive", &AgentComponent::m_timeToLive)
+        .def_readwrite("velocity", &AgentComponent::m_velocity)
+    ;
+}
+
+
 void
 AgentComponent::load(
     const StorageContainer& storage

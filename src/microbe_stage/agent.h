@@ -34,6 +34,21 @@ class AgentComponent : public Component {
 public:
 
     /**
+    * @brief Lua bindings
+    *
+    * Exposes:
+    * - AgentComponent()
+    * - AgentComponent::m_agentId
+    * - AgentComponent::m_potency
+    * - AgentComponent::m_timeToLive
+    * - AgentComponent::m_velocity
+    *
+    * @return
+    */
+    static luabind::scope
+    luaBindings();
+
+    /**
     * @brief The agent id
     */
     AgentId m_agentId = NULL_AGENT;
@@ -287,7 +302,7 @@ public:
     * Exposes:
     * - AgentLifetimeSystem()
     *
-    * @return 
+    * @return
     */
     static luabind::scope
     luaBindings();
@@ -338,7 +353,7 @@ public:
     * Exposes:
     * - AgentMovementSystem()
     *
-    * @return 
+    * @return
     */
     static luabind::scope
     luaBindings();
@@ -389,7 +404,7 @@ public:
     * Exposes:
     * - AgentEmitterSystem()
     *
-    * @return 
+    * @return
     */
     static luabind::scope
     luaBindings();
@@ -441,7 +456,7 @@ public:
     * Exposes:
     * - AgentAbsorberSystem()
     *
-    * @return 
+    * @return
     */
     static luabind::scope
     luaBindings();
