@@ -233,7 +233,7 @@ local function setupPlayer()
     backwardOrganelle:setColour(ColourValue(1, 0, 0, 1))
     player:addOrganelle(0, -2, backwardOrganelle)
     -- Storage energy
-    local storageOrganelle = StorageOrganelle(AgentRegistry.getAgentId("energy"), 100.0)
+    local storageOrganelle = StorageOrganelle(AgentRegistry.getAgentId("energy"), 11.0)
     storageOrganelle:addHex(0, 0)
     storageOrganelle:setColour(ColourValue(0, 1, 0, 1))
     player:addOrganelle(0, 0, storageOrganelle)
