@@ -74,11 +74,23 @@ function Microbe.createMicrobeEntity(name)
     rigidBody.properties.linearFactor = Vector3(1, 1, 0)
     rigidBody.properties.angularFactor = Vector3(0, 0, 1)
     rigidBody.properties:touch()
+    local compoundEmitter = AgentEmitterComponent()
+    compoundEmitter.emissionRadius = 5
+    compoundEmitter.maxInitialSpeed = 0
+    compoundEmitter.minInitialSpeed = 0
+    compoundEmitter.minEmissionAngle = Degree(0)
+    compoundEmitter.maxEmissionAngle = Degree(360)
+    compoundEmitter.meshName = "molecule.mesh"
+    compoundEmitter.particlesPerEmission = 1
+    compoundEmitter.particleLifeTime = 5000
+    compoundEmitter.particleScale = Vector3(0.3, 0.3, 0.3)
+    compoundEmitter.automaticEmission = false
     local components = {
         AgentAbsorberComponent(),
         OgreSceneNodeComponent(),
         MicrobeComponent(),
-        rigidBody
+        rigidBody,
+        compoundEmitter
     }
     for _, component in ipairs(components) do
         entity:addComponent(component)
@@ -93,6 +105,7 @@ Microbe.COMPONENTS = {
     microbe = MicrobeComponent.TYPE_ID,
     rigidBody = RigidBodyComponent.TYPE_ID,
     sceneNode = OgreSceneNodeComponent.TYPE_ID,
+    compoundEmitter = AgentEmitterComponent.TYPE_ID
 }
 
 
@@ -274,40 +287,15 @@ function Microbe:storeAgent(agentId, amount)
         end
     end
     self:_updateAgentAbsorber(agentId)
-
+    
     if remainingAmount > 0 then -- If there is excess compounds, we will eject them
-        -- AgentComponent
-        local entity = Entity()
-        local agentComponent = AgentComponent()
-        agentComponent.agentId = agentId
-        agentComponent.potency = remainingAmount
-        agentComponent.timeToLive = 10000
-        entity:addComponent(agentComponent)
-        -- Scene node
-        local sceneNode = OgreSceneNodeComponent()
-
+        self.compoundEmitter.agentId = agentId
+        self.compoundEmitter.potency = remainingAmount
         local xAxis = self.sceneNode.transform.orientation:xAxis()
-        sceneNode.transform.position = Vector3(self.sceneNode.transform.position.x + xAxis.y*5,
-                                               self.sceneNode.transform.position.y - xAxis.x*5,
-                                               self.sceneNode.transform.position.z)
-        sceneNode.meshName = "molecule.mesh"
-        sceneNode.transform.scale = Vector3(0.3, 0.3, 0.3)
-        entity:addComponent(sceneNode)  
-        -- Rigid body
-        local rigidBody = RigidBodyComponent()
-        rigidBody.properties.hasContactResponse = false
-        rigidBody.properties.kinematic = true
-        rigidBody.properties.shape = SphereShape(
-            0.01
-        )
-        rigidBody:setDynamicProperties(
-            sceneNode.transform.position,
-            Quaternion(Radian(Degree(0)), Vector3(1, 0, 0)),
-            Vector3(0, 0, 0),
-            Vector3(0, 0, 0)
-        )
-        rigidBody.properties:touch()
-        entity:addComponent(rigidBody)
+        local emissionPosition = Vector3(self.sceneNode.transform.position.x + xAxis.y*self.compoundEmitter.emissionRadius,
+                                         self.sceneNode.transform.position.y - xAxis.x*self.compoundEmitter.emissionRadius,
+                                         self.sceneNode.transform.position.z)
+        self.compoundEmitter:emitAgent(emissionPosition);
     end
 end
 

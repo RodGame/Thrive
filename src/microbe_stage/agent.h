@@ -104,6 +104,7 @@ public:
     * - AgentEmitterComponent::m_particleLifetime
     * - AgentEmitterComponent::m_particleScale
     * - AgentEmitterComponent::m_potencyPerParticle
+    * - AgentEmitterComponent::m_automaticEmission
     *
     * @return
     */
@@ -178,6 +179,50 @@ public:
     * @brief For use by AgentEmitterSystem
     */
     Milliseconds m_timeSinceLastEmission = 0;
+
+    /**
+    * @brief Determines if the component will emit automatically every interval.
+    */
+    bool m_automaticEmission = true;
+
+
+    /**
+    * @brief Emits an agent according to the set properties
+    *
+    * @param emitterPosition
+    *   Two cases:
+    *   - If called to immediately emit agent then:
+    *       The position the emitted agent should be spawned.
+    *
+    *   - If called internally for physics-time emissions, then:
+    *       The position of the entity emitting the agent.
+    *       Agent position is calculated from the relative emissionPosition and
+    *       the emitterPosition.
+    */
+    void
+    emitAgent(
+        Ogre::Vector3 emitterPosition
+    );
+
+    /**
+    * @brief Emits the appropriate agents for the provided physics-time
+    *
+    * This method is primarily called by the AgentEmitterSystem, use
+    * overload emitAgent() for instant emission.
+    *
+    * @param millisecond
+    *   The amount of physics-time to emit for.
+    *
+    * @param emitterPosition
+    *   The position of the entity emitting the agent.
+    *   Agent position is calculated from the relative emissionPosition and
+    *   the emitterPosition.
+    */
+    void
+    emitAgent(
+        Ogre::Vector3 emitterPosition,
+        int milliseconds
+    );
 
     void
     load(
