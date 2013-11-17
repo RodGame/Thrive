@@ -74,15 +74,15 @@ function Microbe.createMicrobeEntity(name)
     rigidBody.properties.linearFactor = Vector3(1, 1, 0)
     rigidBody.properties.angularFactor = Vector3(0, 0, 1)
     rigidBody.properties:touch()
-    local compoundEmitter = AgentEmitterComponent()
+    local compoundEmitter = AgentEmitterComponent() -- Emitter for excess compounds
     compoundEmitter.emissionRadius = 5
     compoundEmitter.maxInitialSpeed = 0
-    compoundEmitter.minInitialSpeed = 0
+    compoundEmitter.minInitialSpeed = 22
     compoundEmitter.minEmissionAngle = Degree(0)
     compoundEmitter.maxEmissionAngle = Degree(360)
     compoundEmitter.meshName = "molecule.mesh"
     compoundEmitter.particlesPerEmission = 1
-    compoundEmitter.particleLifeTime = 5000
+    compoundEmitter.particleLifeTime = 10000
     compoundEmitter.particleScale = Vector3(0.3, 0.3, 0.3)
     compoundEmitter.automaticEmission = false
     local components = {
@@ -289,13 +289,13 @@ function Microbe:storeAgent(agentId, amount)
     self:_updateAgentAbsorber(agentId)
     
     if remainingAmount > 0 then -- If there is excess compounds, we will eject them
-        self.compoundEmitter.agentId = agentId
-        self.compoundEmitter.potency = remainingAmount
         local xAxis = self.sceneNode.transform.orientation:xAxis()
         local emissionPosition = Vector3(self.sceneNode.transform.position.x + xAxis.y*self.compoundEmitter.emissionRadius,
                                          self.sceneNode.transform.position.y - xAxis.x*self.compoundEmitter.emissionRadius,
-                                         self.sceneNode.transform.position.z)
-        self.compoundEmitter:emitAgent(emissionPosition);
+                                         self.sceneNode.transform.position.z)              
+        print("ParticleLifeTime equals: ")
+        print(self.compoundEmitter.particleLifeTime)
+        self.compoundEmitter:emitAgent(agentId, remainingAmount, emissionPosition)
     end
 end
 

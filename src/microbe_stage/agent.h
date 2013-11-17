@@ -189,18 +189,26 @@ public:
     /**
     * @brief Emits an agent according to the set properties
     *
+    * @param agentId
+    *   The agent type to emit
+    *
+    * @param amount
+    *   How much of the chosen agent to emit
+    *
     * @param emitterPosition
     *   Two cases:
     *   - If called to immediately emit agent then:
-    *       The position the emitted agent should be spawned.
+    *       The position the emitted agent should be spawned
     *
     *   - If called internally for physics-time emissions, then:
-    *       The position of the entity emitting the agent.
+    *       The position of the entity emitting the agent
     *       Agent position is calculated from the relative emissionPosition and
-    *       the emitterPosition.
+    *       the emitterPosition
     */
     void
     emitAgent(
+        AgentId agentId,
+        int amount,
         Ogre::Vector3 emitterPosition
     );
 

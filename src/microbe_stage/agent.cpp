@@ -78,7 +78,7 @@ AgentEmitterComponent::luaBindings() {
             def("TYPE_NAME", &AgentEmitterComponent::TYPE_NAME)
         ]
         .def(constructor<>())
-        .def("emitAgent", ( void(AgentEmitterComponent::*)(Ogre::Vector3) ) &AgentEmitterComponent::emitAgent) //Cast to correct overload
+        .def("emitAgent", ( void(AgentEmitterComponent::*)(AgentId, int, Ogre::Vector3) ) &AgentEmitterComponent::emitAgent) //Cast to correct overload
         .def_readwrite("agentId", &AgentEmitterComponent::m_agentId)
         .def_readwrite("emissionRadius", &AgentEmitterComponent::m_emissionRadius)
         .def_readwrite("emitInterval", &AgentEmitterComponent::m_emitInterval)
@@ -114,13 +114,15 @@ AgentEmitterComponent::emitAgent(
         this->m_timeSinceLastEmission -= this->m_emitInterval;
 
         for (unsigned int i = 0; i < this->m_particlesPerEmission; ++i) {
-            this->emitAgent(emitterPosition);
+            this->emitAgent(this->m_agentId, this->m_potencyPerParticle, emitterPosition);
         }
     }
 }
 
 void
 AgentEmitterComponent::emitAgent(
+    AgentId agentId,
+    int amount,
     Ogre::Vector3 emissionPosition  //If called from emitAgent(Ogre::Vector3, int) overload, it represents emitterPosition, if called directly it represents emissionPosition
 ) {
     Ogre::Vector3 emissionOffset(0,0,0);
@@ -164,8 +166,8 @@ AgentEmitterComponent::emitAgent(
     auto agentComponent = make_unique<AgentComponent>();
     agentComponent->m_timeToLive = this->m_particleLifetime;
     agentComponent->m_velocity = emissionVelocity;
-    agentComponent->m_agentId = this->m_agentId;
-    agentComponent->m_potency = this->m_potencyPerParticle;
+    agentComponent->m_agentId = agentId;
+    agentComponent->m_potency = amount;
     // Build component list
     std::list<std::unique_ptr<Component>> components;
     components.emplace_back(std::move(agentSceneNodeComponent));
