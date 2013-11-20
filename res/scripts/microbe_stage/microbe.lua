@@ -295,7 +295,7 @@ function Microbe:storeAgent(agentId, amount)
                                          self.sceneNode.transform.position.z)              
         print("ParticleLifeTime equals: ")
         print(self.compoundEmitter.particleLifeTime)
-        self.compoundEmitter:emitAgent(agentId, remainingAmount, emissionPosition)
+        self.compoundEmitter:emitAgent(agentId, remainingAmount, true, emissionPosition)
     end
 end
 

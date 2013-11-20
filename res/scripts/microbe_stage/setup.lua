@@ -70,7 +70,6 @@ local function createSpawnSystem()
         local energyEmitter = AgentEmitterComponent()
         entity:addComponent(energyEmitter)
         energyEmitter.agentId = AgentRegistry.getAgentId("energy")
-        energyEmitter.emitInterval = 1000
         energyEmitter.emissionRadius = 1
         energyEmitter.maxInitialSpeed = 10
         energyEmitter.minInitialSpeed = 2
@@ -81,7 +80,9 @@ local function createSpawnSystem()
         energyEmitter.particleLifeTime = 5000
         energyEmitter.particleScale = Vector3(0.3, 0.3, 0.3)
         energyEmitter.potencyPerParticle = 300.0
-        
+        local timedEmitter = TimedAgentEmitterComponent()
+        entity:addComponent(timedEmitter)
+        timedEmitter.emitInterval = 1000
         return entity
     end
     
@@ -119,7 +120,6 @@ local function setupEmitter()
     local energyEmitter = AgentEmitterComponent()
     entity:addComponent(energyEmitter)
     energyEmitter.agentId = AgentRegistry.getAgentId("energy")
-    energyEmitter.emitInterval = 1000
     energyEmitter.emissionRadius = 1
     energyEmitter.maxInitialSpeed = 10
     energyEmitter.minInitialSpeed = 2
@@ -130,6 +130,9 @@ local function setupEmitter()
     energyEmitter.particleLifeTime = 5000
     energyEmitter.particleScale = Vector3(0.3, 0.3, 0.3)
     energyEmitter.potencyPerParticle = 3.0
+    local timedEmitter = TimedAgentEmitterComponent()
+    entity:addComponent(timedEmitter)
+    timedEmitter.emitInterval = 1000
     -- Setting up an emitter for agent 2
     local entity2 = Entity("oxygen-emitter")
     -- Rigid body
@@ -157,7 +160,6 @@ local function setupEmitter()
     local agent2Emitter = AgentEmitterComponent()
     entity2:addComponent(agent2Emitter)
     agent2Emitter.agentId = AgentRegistry.getAgentId("oxygen")
-    agent2Emitter.emitInterval = 1000
     agent2Emitter.emissionRadius = 1
     agent2Emitter.maxInitialSpeed = 10
     agent2Emitter.minInitialSpeed = 2
@@ -168,6 +170,9 @@ local function setupEmitter()
     agent2Emitter.particleLifeTime = 5000
     agent2Emitter.particleScale = Vector3(0.3, 0.3, 0.3)
     agent2Emitter.potencyPerParticle = 1.0
+    local timedEmitter2 = TimedAgentEmitterComponent()
+    entity2:addComponent(timedEmitter2)
+    timedEmitter2.emitInterval = 1000
 end
 
 

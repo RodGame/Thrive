@@ -94,7 +94,6 @@ public:
     * - AgentEmitterComponent()
     * - AgentEmitterComponent::m_agentId
     * - AgentEmitterComponent::m_emissionRadius
-    * - AgentEmitterComponent::m_emitInterval
     * - AgentEmitterComponent::m_maxInitialSpeed
     * - AgentEmitterComponent::m_minInitialSpeed
     * - AgentEmitterComponent::m_minEmissionAngle
@@ -104,7 +103,6 @@ public:
     * - AgentEmitterComponent::m_particleLifetime
     * - AgentEmitterComponent::m_particleScale
     * - AgentEmitterComponent::m_potencyPerParticle
-    * - AgentEmitterComponent::m_automaticEmission
     *
     * @return
     */
@@ -120,11 +118,6 @@ public:
     * @brief How far away the particles are spawned
     */
     Ogre::Real m_emissionRadius = 0.0;
-
-    /**
-    * @brief How often new particles are spawned
-    */
-    Milliseconds m_emitInterval = 1000;
 
     /**
     * @brief The maximum initial speed of new particles
@@ -175,16 +168,6 @@ public:
     */
     float m_potencyPerParticle = 1.0f;
 
-    /**
-    * @brief For use by AgentEmitterSystem
-    */
-    Milliseconds m_timeSinceLastEmission = 0;
-
-    /**
-    * @brief Determines if the component will emit automatically every interval.
-    */
-    bool m_automaticEmission = true;
-
 
     /**
     * @brief Emits an agent according to the set properties
@@ -195,31 +178,25 @@ public:
     * @param amount
     *   How much of the chosen agent to emit
     *
-    * @param emitterPosition
-    *   Two cases:
-    *   - If called to immediately emit agent then:
-    *       The position the emitted agent should be spawned
+    * @param useAbsolutePosition
+    *   If set to true, the emissionPosition parameter will represent the
+    *   absolute position the compound will spawn at. If set to false, the
+    *   spawn position will be determined randomly according to members.
     *
-    *   - If called internally for physics-time emissions, then:
-    *       The position of the entity emitting the agent
-    *       Agent position is calculated from the relative emissionPosition and
-    *       the emitterPosition
+    * @param emissionPosition
+    *   The position to spawn the compound or the position of the emitting
+    *   entity. See useAbsolute position parameter.
     */
     void
     emitAgent(
         AgentId agentId,
         int amount,
-        Ogre::Vector3 emitterPosition
+        bool useAbsolutePosition,
+        Ogre::Vector3 emissionPosition
     );
 
     /**
-    * @brief Emits the appropriate agents for the provided physics-time
-    *
-    * This method is primarily called by the AgentEmitterSystem, use
-    * overload emitAgent() for instant emission.
-    *
-    * @param millisecond
-    *   The amount of physics-time to emit for.
+    * @brief Emits a single particle.
     *
     * @param emitterPosition
     *   The position of the entity emitting the agent.
@@ -228,9 +205,49 @@ public:
     */
     void
     emitAgent(
-        Ogre::Vector3 emitterPosition,
-        int milliseconds
+        Ogre::Vector3 emitterPosition
     );
+
+    void
+    load(
+        const StorageContainer& storage
+    ) override;
+
+    StorageContainer
+    storage() const override;
+
+};
+
+
+/**
+* @brief Component for automatic timed compound emissions.
+*/
+class TimedAgentEmitterComponent : public Component {
+    COMPONENT(TimedAgentEmitterComponent)
+
+public:
+
+    /**
+    * @brief Lua bindings
+    *
+    * Exposes:
+    * - AgentEmitterComponent()
+    * - AgentEmitterComponent::m_emitInterval
+    *
+    * @return
+    */
+    static luabind::scope
+    luaBindings();
+
+    /**
+    * @brief How often new particles are spawned
+    */
+    Milliseconds m_emitInterval = 1000;
+
+    /**
+    * @brief For use by TimedAgentEmitterSystem
+    */
+    Milliseconds m_timeSinceLastEmission = 0;
 
     void
     load(

@@ -10,6 +10,7 @@ thrive::MicrobeBindings::luaBindings() {
         AgentComponent::luaBindings(),
         AgentAbsorberComponent::luaBindings(),
         AgentEmitterComponent::luaBindings(),
+        TimedAgentEmitterComponent::luaBindings(),
         // Systems
         AgentLifetimeSystem::luaBindings(),
         AgentMovementSystem::luaBindings(),

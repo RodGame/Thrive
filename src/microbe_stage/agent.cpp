@@ -78,10 +78,9 @@ AgentEmitterComponent::luaBindings() {
             def("TYPE_NAME", &AgentEmitterComponent::TYPE_NAME)
         ]
         .def(constructor<>())
-        .def("emitAgent", ( void(AgentEmitterComponent::*)(AgentId, int, Ogre::Vector3) ) &AgentEmitterComponent::emitAgent) //Cast to correct overload
+        .def("emitAgent", ( void(AgentEmitterComponent::*)(AgentId, int, bool, Ogre::Vector3) ) &AgentEmitterComponent::emitAgent) //Cast to desired overload
         .def_readwrite("agentId", &AgentEmitterComponent::m_agentId)
         .def_readwrite("emissionRadius", &AgentEmitterComponent::m_emissionRadius)
-        .def_readwrite("emitInterval", &AgentEmitterComponent::m_emitInterval)
         .def_readwrite("maxInitialSpeed", &AgentEmitterComponent::m_maxInitialSpeed)
         .def_readwrite("minInitialSpeed", &AgentEmitterComponent::m_minInitialSpeed)
         .def_readwrite("minEmissionAngle", &AgentEmitterComponent::m_minEmissionAngle)
@@ -91,39 +90,25 @@ AgentEmitterComponent::luaBindings() {
         .def_readwrite("particleLifetime", &AgentEmitterComponent::m_particleLifetime)
         .def_readwrite("particleScale", &AgentEmitterComponent::m_particleScale)
         .def_readwrite("potencyPerParticle", &AgentEmitterComponent::m_potencyPerParticle)
-        .def_readwrite("automaticEmission", &AgentEmitterComponent::m_automaticEmission)
     ;
 }
 #pragma GCC diagnostic pop
 
+
 void
 AgentEmitterComponent::emitAgent(
-    Ogre::Vector3 emitterPosition,
-    int milliseconds
+    Ogre::Vector3 emittorPosition
 ) {
-    Component*
-    getComponent(
-        EntityId entityId,
-        ComponentTypeId typeId
-    );
-    this->m_timeSinceLastEmission += milliseconds;
-    while (
-        this->m_emitInterval > 0 and
-        this->m_timeSinceLastEmission >= this->m_emitInterval
-    ) {
-        this->m_timeSinceLastEmission -= this->m_emitInterval;
-
-        for (unsigned int i = 0; i < this->m_particlesPerEmission; ++i) {
-            this->emitAgent(this->m_agentId, this->m_potencyPerParticle, emitterPosition);
-        }
-    }
+    this->emitAgent(this->m_agentId, this->m_potencyPerParticle, false, emittorPosition);
 }
+
 
 void
 AgentEmitterComponent::emitAgent(
     AgentId agentId,
     int amount,
-    Ogre::Vector3 emissionPosition  //If called from emitAgent(Ogre::Vector3, int) overload, it represents emitterPosition, if called directly it represents emissionPosition
+    bool useAbsolutePosition,      // If true, the emissionPosition parameter will an absolute position for the emission
+    Ogre::Vector3 emissionPosition
 ) {
     Ogre::Vector3 emissionOffset(0,0,0);
 
@@ -140,7 +125,7 @@ AgentEmitterComponent::emitAgent(
         emissionSpeed * Ogre::Math::Cos(emissionAngle),
         0.0
     );
-    if (this->m_automaticEmission)  //If called internally from the overload
+    if (!useAbsolutePosition)
     {
         emissionOffset = Ogre::Vector3(
             this->m_emissionRadius * Ogre::Math::Sin(emissionAngle),
@@ -190,7 +175,6 @@ AgentEmitterComponent::load(
     Component::load(storage);
     m_agentId = storage.get<AgentId>("agentId", NULL_AGENT);
     m_emissionRadius = storage.get<Ogre::Real>("emissionRadius", 0.0);
-    m_emitInterval = storage.get<Milliseconds>("emitInterval", 1000);
     m_maxInitialSpeed = storage.get<Ogre::Real>("maxInitialSpeed", 0.0);
     m_minInitialSpeed = storage.get<Ogre::Real>("minInitialSpeed", 0.0);
     m_maxEmissionAngle = storage.get<Ogre::Degree>("maxEmissionAngle");
@@ -200,8 +184,6 @@ AgentEmitterComponent::load(
     m_particleLifetime = storage.get<Milliseconds>("particleLifetime");
     m_particleScale = storage.get<Ogre::Vector3>("particleScale");
     m_potencyPerParticle = storage.get<float>("potencyPerParticle");
-    m_timeSinceLastEmission = storage.get<Milliseconds>("timeSinceLastEmission");
-    m_automaticEmission = storage.get<bool>("automaticEmission");
 }
 
 StorageContainer
@@ -209,7 +191,6 @@ AgentEmitterComponent::storage() const {
     StorageContainer storage = Component::storage();
     storage.set<AgentId>("agentId", m_agentId);
     storage.set<Ogre::Real>("emissionRadius", m_emissionRadius);
-    storage.set<Milliseconds>("emitInterval", m_emitInterval);
     storage.set<Ogre::Real>("maxInitialSpeed", m_maxInitialSpeed);
     storage.set<Ogre::Real>("minInitialSpeed", m_minInitialSpeed);
     storage.set<Ogre::Degree>("maxEmissionAngle", m_maxEmissionAngle);
@@ -219,13 +200,51 @@ AgentEmitterComponent::storage() const {
     storage.set<Milliseconds>("particleLifetime", m_particleLifetime);
     storage.set<Ogre::Vector3>("particleScale", m_particleScale);
     storage.set<float>("potencyPerParticle", m_potencyPerParticle);
-    storage.set<Milliseconds>("timeSinceLastEmission", m_timeSinceLastEmission);
-    storage.set<bool>("automaticEmission", m_automaticEmission);
     return storage;
 }
 
 REGISTER_COMPONENT(AgentEmitterComponent)
 
+
+////////////////////////////////////////////////////////////////////////////////
+// TimedAgentEmitterComponent
+////////////////////////////////////////////////////////////////////////////////
+
+luabind::scope
+TimedAgentEmitterComponent::luaBindings() {
+    using namespace luabind;
+    return class_<TimedAgentEmitterComponent, Component>("TimedAgentEmitterComponent")
+        .enum_("ID") [
+            value("TYPE_ID", TimedAgentEmitterComponent::TYPE_ID)
+        ]
+        .scope [
+            def("TYPE_NAME", &TimedAgentEmitterComponent::TYPE_NAME)
+        ]
+        .def(constructor<>())
+        .def_readwrite("emitInterval", &TimedAgentEmitterComponent::m_emitInterval)
+    ;
+}
+
+
+void
+TimedAgentEmitterComponent::load(
+    const StorageContainer& storage
+) {
+    Component::load(storage);
+    m_emitInterval = storage.get<Milliseconds>("emitInterval", 1000);
+    m_timeSinceLastEmission = storage.get<Milliseconds>("timeSinceLastEmission");
+}
+
+
+StorageContainer
+TimedAgentEmitterComponent::storage() const {
+    StorageContainer storage = Component::storage();
+    storage.set<Milliseconds>("emitInterval", m_emitInterval);
+    storage.set<Milliseconds>("timeSinceLastEmission", m_timeSinceLastEmission);
+    return storage;
+}
+
+REGISTER_COMPONENT(TimedAgentEmitterComponent)
 
 ////////////////////////////////////////////////////////////////////////////////
 // AgentAbsorberComponent
@@ -459,6 +478,7 @@ struct AgentEmitterSystem::Implementation {
 
     EntityFilter<
         AgentEmitterComponent,
+        TimedAgentEmitterComponent,
         OgreSceneNodeComponent
     > m_entities;
 
@@ -497,10 +517,17 @@ void
 AgentEmitterSystem::update(int milliseconds) {
     for (auto& value : m_impl->m_entities) {
         AgentEmitterComponent* emitterComponent = std::get<0>(value.second);
-        OgreSceneNodeComponent* sceneNodeComponent = std::get<1>(value.second);
-        if (emitterComponent->m_automaticEmission)
-        {
-            emitterComponent->emitAgent(sceneNodeComponent->m_transform.position ,milliseconds);
+        TimedAgentEmitterComponent* timedEmitterComponent = std::get<1>(value.second);
+        OgreSceneNodeComponent* sceneNodeComponent = std::get<2>(value.second);
+        timedEmitterComponent->m_timeSinceLastEmission += milliseconds;
+        while (
+            timedEmitterComponent->m_emitInterval > 0 and
+            timedEmitterComponent->m_timeSinceLastEmission >= timedEmitterComponent->m_emitInterval
+        ) {
+            timedEmitterComponent->m_timeSinceLastEmission -= timedEmitterComponent->m_emitInterval;
+            for (unsigned int i = 0; i < emitterComponent->m_particlesPerEmission; ++i) {
+                 emitterComponent->emitAgent(sceneNodeComponent->m_transform.position);
+            }
         }
     }
 }
