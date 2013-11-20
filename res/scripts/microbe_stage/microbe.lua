@@ -6,10 +6,13 @@
 --------------------------------------------------------------------------------
 class 'MicrobeComponent' (Component)
 
+COMPOUND_DISTRIBUTION_INTERVAL = 100 -- quantity of physics time between each loop distributing agents to organelles. TODO: Modify to reflect microbe size.
+
 function MicrobeComponent:__init()
     Component.__init(self)
     self.organelles = {}
     self.vacuoles = {}
+    self.processOrganelles = {}
     self.movementDirection = Vector3(0, 0, 0)
     self.facingTargetPoint = Vector3(0, 0, 0)
     self.initialized = false
@@ -74,10 +77,15 @@ function Microbe.createMicrobeEntity(name)
     rigidBody.properties.linearFactor = Vector3(1, 1, 0)
     rigidBody.properties.angularFactor = Vector3(0, 0, 1)
     rigidBody.properties:touch()
+
+    local reactionHandler = CollisionComponent()
+    reactionHandler:addCollisionGroup("microbe")
+    
     local components = {
         AgentAbsorberComponent(),
         OgreSceneNodeComponent(),
         MicrobeComponent(),
+        reactionHandler,
         rigidBody
     }
     for _, component in ipairs(components) do
@@ -93,6 +101,7 @@ Microbe.COMPONENTS = {
     microbe = MicrobeComponent.TYPE_ID,
     rigidBody = RigidBodyComponent.TYPE_ID,
     sceneNode = OgreSceneNodeComponent.TYPE_ID,
+    collisionHandler = CollisionComponent.TYPE_ID
 }
 
 
@@ -105,6 +114,7 @@ Microbe.COMPONENTS = {
 --  The entity this microbe wraps
 function Microbe:__init(entity)
     self.entity = entity
+    self.residuePhysicsTime = 0
     for key, typeId in pairs(Microbe.COMPONENTS) do
         local component = entity:getComponent(typeId)
         assert(component ~= nil, "Can't create microbe from this entity, it's missing " .. key)
@@ -167,6 +177,15 @@ function Microbe:addVacuole(vacuole)
     local vacuoleList = self.microbe.vacuoles[agentId]
     table.insert(vacuoleList, vacuole)
     self:_updateAgentAbsorber(vacuole.agentId)
+end
+
+
+-- Adds a process organelle
+--
+-- @param processOrganelle
+--  An object of type ProcessOrganelle
+function Microbe:addProcessOrganelle(processOrganelle)
+    table.insert(self.microbe.processOrganelles, processOrganelle)
 end
 
 
@@ -310,11 +329,32 @@ end
 -- Updates the microbe's state
 function Microbe:update(milliseconds)
     -- Vacuoles
+    
     for agentId, vacuoleList in pairs(self.microbe.vacuoles) do
+        -- Check for agents to store
         local amount = self.agentAbsorber:absorbedAgentAmount(agentId)
         if amount > 0.0 then
             self:storeAgent(agentId, amount)
         end
+    end
+    -- Distribute agents to StorageOrganelles
+    self.residuePhysicsTime = self.residuePhysicsTime + milliseconds
+    while self.residuePhysicsTime > COMPOUND_DISTRIBUTION_INTERVAL do -- For every COMPOUND_DISTRIBUTION_INTERVAL passed
+        for agentId, vacuoleList in pairs(self.microbe.vacuoles) do -- Foreach agent type.
+            if self:getAgentAmount(agentId) > 0 then -- If microbe contains the compound
+                local candidateIndices = {} -- Indices of organelles that want the agent
+                for i, processOrg in ipairs(self.microbe.processOrganelles) do  
+                    if processOrg:wantsInputAgent(agentId) then   
+                        table.insert(candidateIndices, i) -- Organelle has determined that it is interrested in obtaining the agnet
+                    end
+                end
+                if #candidateIndices > 0 then -- If there were any candidates, pick a random winner.
+                    local chosenProcessOrg = self.microbe.processOrganelles[candidateIndices[rng:getInt(1,#candidateIndices)]]
+                    chosenProcessOrg:storeAgent(agentId, self:takeAgent(agentId, 1))
+                end
+            end
+        end
+        self.residuePhysicsTime = self.residuePhysicsTime - COMPOUND_DISTRIBUTION_INTERVAL
     end
     -- Other organelles
     for _, organelle in pairs(self.microbe.organelles) do
@@ -391,7 +431,8 @@ function MicrobeSystem:__init()
             AgentAbsorberComponent,
             MicrobeComponent,
             OgreSceneNodeComponent,
-            RigidBodyComponent 
+            RigidBodyComponent, 
+            CollisionComponent
         }, 
         true
     )
@@ -401,7 +442,7 @@ end
 
 function MicrobeSystem:init(gameState)
     System.init(self, gameState)
-    self.entities:init(gameState)
+    self.entities:init(gameState)    
 end
 
 
